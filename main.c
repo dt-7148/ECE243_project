@@ -6,8 +6,8 @@
 #define BULLET_VELO 20
 #define X_BOUND 319				// screen x bound
 #define Y_BOUND 239				// screen y bound
-#define NUM_BULLETS 50
-#define FIRE_RATE 0			// How many frames between an enemy shooting a bullet, lower = faster firing
+#define NUM_BULLETS 100
+#define FIRE_RATE 10			// How many frames between an enemy shooting a bullet, lower = faster firing
 
 void clear_screen();
 void plot_pixel(int, int, short int);
@@ -43,6 +43,8 @@ typedef struct bullet {
 Bullet enemyBullets[NUM_BULLETS];
 Bullet playerBullets[NUM_BULLETS];
 
+int player_h, player_v;
+
 /*
 	to add later: bullet pool, enemy pool
 */
@@ -55,6 +57,8 @@ int main(void)
 	numBulletsActive = 0;
 	curBullet = 0;
 	frameCounter = 0;
+
+    player_h = player_v = 0;
 	
     volatile int *pixel_ctrl_ptr = (int *)0xFF203020;
     /* Read location of the pixel buffer from the pixel buffer controller */
@@ -147,9 +151,74 @@ void handle_input() {
 			}
 			break;
 			
+
+        // ==================================================== Arrow keys ====================================================
+
+        case 0x75:                          // Up arrow
+            if (F0_FLAG) {
+                // Arrow key released
+                F0_FLAG = 0;
+                E0_FLAG = 0;            // E0 flag will be up when key release, so need to disable it
+                player_v = 0;
+            }
+            else if (E0_FLAG) {
+                // Arrow key pressed
+                E0_FLAG = 0;
+                player_v = -1;
+            }
+
+            break;
+        case 0x6B:                          // Left arrow
+            if (F0_FLAG) {
+                // Arrow key released
+                F0_FLAG = 0;
+                E0_FLAG = 0;
+                player_h = 0;
+            }
+            else if (E0_FLAG) {
+                // Arrow key pressed
+                E0_FLAG = 0;
+                player_h = -1;
+            }
+
+            break;
+        case 0x72:                          // Down arrow
+            if (F0_FLAG) {
+                // Arrow key released
+                F0_FLAG = 0;
+                E0_FLAG = 0;
+                player_v = 0;
+            }
+            else if (E0_FLAG) {
+                // Arrow key pressed
+                E0_FLAG = 0;
+                player_v = 1;
+            }
+
+            break;
+        case 0x74:                          // Right arrow
+            if (F0_FLAG) {
+                // Arrow key released
+                F0_FLAG = 0;
+                E0_FLAG = 0; 
+                player_h = 0;
+            }
+            else if (E0_FLAG) {
+                // Arrow key pressed
+                E0_FLAG = 0;
+                player_h = 1;
+            }
+
+            break;
+
+        // =============================================== Special bytes ===============================================
+
 		case 0xF0:
 			F0_FLAG = 1;
 			break;
+        case 0xE0:
+            E0_FLAG = 1;
+            break;
 			
 		default:
 			break;
@@ -224,6 +293,8 @@ void update_bullet() {
 	else {
 		frameCounter = frameCounter + 1;	
 	}
+    // later: will need to use a for loop for each 
+    // change enemyBullets.x in deltas to enemy locations
 	
 	for (int i = 0; i < NUM_BULLETS; i++) {
 		if (enemyBullets[i].isActive) {
@@ -236,9 +307,6 @@ void update_bullet() {
 				reset_bullet(i);
 				numBulletsActive = numBulletsActive - 1;
 			}
-			
-			
-			
 		}
 	}
 }
@@ -283,10 +351,27 @@ void draw() {
 	for (int k = 0; k < NUM_BULLETS; k++) {
 		for (int i = 0; i < 10; i++) {
 			for (int j = 0; j < 10; j++) {
-				plot_pixel(enemyBullets[k].x + i, enemyBullets[k].y + j, 0xffff);	
+				if (enemyBullets[k].isActive) {
+                    plot_pixel(enemyBullets[k].x + i, enemyBullets[k].y + j, 0xfff1);	
+                }
 			}
 		}
 	}
+
+    if (player_h != 0) {
+        for (int i = 0; i < 10; i++) {
+			for (int j = 0; j < 10; j++) {
+				plot_pixel(playerX + player_h * 30 + i, playerY + j, 0x1c00);	
+			}
+		}
+    }
+    else if (player_v != 0) {
+        for (int i = 0; i < 10; i++) {
+			for (int j = 0; j < 10; j++) {
+				plot_pixel(playerX + i, playerY + player_v * 30 + j, 0x1c00);	
+			}
+		}
+    }
 }
 
 void waitForVsync() {
