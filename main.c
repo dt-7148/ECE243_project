@@ -10,6 +10,7 @@
 #define NUM_BULLETS 100
 #define FIRE_RATE 10			// How many frames between an enemy shooting a bullet, lower = faster firing
 #define PLAYER_FIRE_RATE 10
+#define NUM_ENEMIES 5          // How many enemies to spawn in a given room
 
 void clear_screen();
 void plot_pixel(int, int, short int);
@@ -24,6 +25,7 @@ void reset_bullet(int i);
 void update_player_bullets();
 double squareRoot(double n, float l);
 void player_reset_bullet(int i);
+void init_enemies();
 
 int pixel_buffer_start; // global variable
 int back_buffer;
@@ -33,7 +35,6 @@ int player_velo_x;		// Player directional velocity - will change between +/- VEL
 int player_velo_y;		
 int E0_FLAG;			// Flag for when E0 bit is received
 int F0_FLAG;			// Flag for when F0 bit is received
-int numBulletsActive;	
 int curBullet;			// Current bullet in bullet array
 int player_curBullet;
 int frameCounter_enemy;		// frame counter for bullet firing delay 
@@ -41,17 +42,17 @@ int frameCounter_player;
 int player_aim_h;       // Indicates whether the player is aiming horizontally/vertically using arrow keys 
 int player_aim_v;       // player will shoot a bullet only when one of these is non-zero
 
-typedef struct bullet {
+typedef struct entity {
 	double x;
 	double y;
 	double velo_x;
 	double velo_y;
 	int isActive;
-} Bullet;
+} Entity;
 
-Bullet enemyBullets[NUM_BULLETS];
-Bullet playerBullets[NUM_BULLETS];
-
+Entity enemyBullets[NUM_BULLETS];
+Entity playerBullets[NUM_BULLETS];
+Entity enemies[NUM_ENEMIES];
 
 
 /*
@@ -63,7 +64,7 @@ int main(void)
 
 	playerX = playerY = 0;
 	init_bullets();
-	numBulletsActive = 0;
+    init_enemies();
 	curBullet = 0;
 	player_curBullet = 0;
     frameCounter_enemy = 0;
@@ -93,6 +94,16 @@ void init_bullets() {
 		reset_bullet(i);
         player_reset_bullet(i);
 	}
+}
+
+void init_enemies() {
+    for (int i = 0; i < NUM_ENEMIES; i++) {
+        enemies[i].x = (rand() % (X_BOUND + 1));           // Initialize positions to be a random point between the screen bounds
+        enemies[i].y = (rand() % (Y_BOUND + 1));           // Later: factor in width of enemy
+        enemies[i].velo_x = 0;
+        enemies[i].velo_y = 0;
+        enemies[i].isActive = 0;
+    }
 }
 
 void reset_bullet(int i) {
@@ -336,17 +347,20 @@ void update_player_bullets() {
 
 void update_bullet() {
 	if (frameCounter_enemy == FIRE_RATE) {
-		// fire bullet - ie. get velocity, set isActive = 1;
-		float deltaX = playerX - enemyBullets[curBullet].x;
-		float deltaY = playerY - enemyBullets[curBullet].y;
-		float hyp = squareRoot( pow(deltaX, 2) + pow(deltaY, 2), 0.0001);
-		enemyBullets[curBullet].velo_x = BULLET_VELO * (deltaX / hyp);
-		enemyBullets[curBullet].velo_y = BULLET_VELO * (deltaY / hyp);
-		enemyBullets[curBullet].isActive = 1;
-		numBulletsActive = numBulletsActive + 1;
-		curBullet = curBullet + 1;
+		for (int i = 0; i < NUM_ENEMIES; i++) {
+            // fire bullet - ie. get velocity, set isActive = 1;
+            enemyBullets[curBullet].x = enemies[i].x;
+            enemyBullets[curBullet].y = enemies[i].y;
+            float deltaX = playerX - enemies[i].x;
+            float deltaY = playerY - enemies[i].y;
+            float hyp = squareRoot( pow(deltaX, 2) + pow(deltaY, 2), 0.0001);
+            enemyBullets[curBullet].velo_x = BULLET_VELO * (deltaX / hyp);
+            enemyBullets[curBullet].velo_y = BULLET_VELO * (deltaY / hyp);
+            enemyBullets[curBullet].isActive = 1;
+            curBullet = curBullet + 1;
 
-		if (curBullet >= NUM_BULLETS) curBullet = 0;
+            if (curBullet >= NUM_BULLETS) curBullet = 0;
+        }
 		
 		frameCounter_enemy = 0;
 	}
@@ -365,7 +379,6 @@ void update_bullet() {
 			
 			if (enemyBullets[i].x >= X_BOUND || enemyBullets[i].x <= 0 || enemyBullets[i].y >= Y_BOUND || enemyBullets[i].y <= 0) {
 				reset_bullet(i);
-				numBulletsActive = numBulletsActive - 1;
 			}
 		}
 	}
@@ -409,6 +422,14 @@ void draw() {
 		}
 	}
 	
+    for (int i = 0; i < 10; i++) {
+		for (int j = 0; j < 10; j++) {
+			for (int k = 0; k < NUM_ENEMIES; k++) {
+                plot_pixel(enemies[k].x + i, enemies[k].y + j, 0x07e0);
+            }	
+		}
+	}
+    
 	for (int k = 0; k < NUM_BULLETS; k++) {
 		for (int i = 0; i < 10; i++) {
 			for (int j = 0; j < 10; j++) {
