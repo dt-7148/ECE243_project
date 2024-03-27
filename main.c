@@ -19,6 +19,7 @@ void update_player();
 void update_bullet();
 void init_bullets();
 void reset_bullet(int i);
+void update_player_bullets();
 
 int pixel_buffer_start; // global variable
 int back_buffer;
@@ -31,6 +32,8 @@ int F0_FLAG;			// Flag for when F0 bit is received
 int numBulletsActive;	
 int curBullet;			// Current bullet in bullet array
 int frameCounter;		// frame counter for bullet firing delay 
+int player_aim_h;       // Indicates whether the player is aiming horizontally/vertically using arrow keys 
+int player_aim_v;       // player will shoot a bullet only when one of these is non-zero
 
 typedef struct bullet {
 	double x;
@@ -43,7 +46,7 @@ typedef struct bullet {
 Bullet enemyBullets[NUM_BULLETS];
 Bullet playerBullets[NUM_BULLETS];
 
-int player_h, player_v;
+
 
 /*
 	to add later: bullet pool, enemy pool
@@ -58,7 +61,7 @@ int main(void)
 	curBullet = 0;
 	frameCounter = 0;
 
-    player_h = player_v = 0;
+    player_aim_h = player_aim_v = 0;
 	
     volatile int *pixel_ctrl_ptr = (int *)0xFF203020;
     /* Read location of the pixel buffer from the pixel buffer controller */
@@ -117,7 +120,10 @@ void handle_input() {
 		case 0x1D:							// W key
 			if (F0_FLAG) {
 				F0_FLAG = 0;
-				player_velo_y = 0;
+                // Do not set to 0 if the opposite direction was pressed right after
+				if (player_velo_y != 1 * PLAYER_VELO) {
+                    player_velo_y = 0;
+                }
 			}
 			else {
 				player_velo_y = -1 * PLAYER_VELO;	
@@ -126,7 +132,9 @@ void handle_input() {
 		case 0x1C:							// A key
 			if (F0_FLAG) {
 				F0_FLAG = 0;
-				player_velo_x = 0;
+				if (player_velo_x != 1 * PLAYER_VELO) {
+                    player_velo_x = 0;
+                }
 			}
 			else {
 				player_velo_x = -1 * PLAYER_VELO;	
@@ -135,7 +143,9 @@ void handle_input() {
 		case 0x1B:							// S key
 			if (F0_FLAG) {
 				F0_FLAG = 0;
-				player_velo_y = 0;
+				if (player_velo_y != -1 * PLAYER_VELO) {
+                    player_velo_y = 0;
+                }
 			}
 			else {
 				player_velo_y = PLAYER_VELO;	
@@ -144,7 +154,9 @@ void handle_input() {
 		case 0x23:							// D key
 			if (F0_FLAG) {
 				F0_FLAG = 0;
-				player_velo_x = 0;
+				if (player_velo_x != -1 * PLAYER_VELO) {
+                    player_velo_x = 0;
+                }
 			}
 			else {
 				player_velo_x = PLAYER_VELO;	
@@ -159,12 +171,14 @@ void handle_input() {
                 // Arrow key released
                 F0_FLAG = 0;
                 E0_FLAG = 0;            // E0 flag will be up when key release, so need to disable it
-                player_v = 0;
+                if (player_aim_v != 1) {
+                    player_aim_v = 0;
+                }
             }
             else if (E0_FLAG) {
                 // Arrow key pressed
                 E0_FLAG = 0;
-                player_v = -1;
+                player_aim_v = -1;
             }
 
             break;
@@ -173,12 +187,14 @@ void handle_input() {
                 // Arrow key released
                 F0_FLAG = 0;
                 E0_FLAG = 0;
-                player_h = 0;
+                if (player_aim_h != 1) {
+                    player_aim_h = 0;
+                }
             }
             else if (E0_FLAG) {
                 // Arrow key pressed
                 E0_FLAG = 0;
-                player_h = -1;
+                player_aim_h = -1;
             }
 
             break;
@@ -187,12 +203,14 @@ void handle_input() {
                 // Arrow key released
                 F0_FLAG = 0;
                 E0_FLAG = 0;
-                player_v = 0;
+                if (player_aim_v != -1) {
+                    player_aim_v = 0;
+                }
             }
             else if (E0_FLAG) {
                 // Arrow key pressed
                 E0_FLAG = 0;
-                player_v = 1;
+                player_aim_v = 1;
             }
 
             break;
@@ -201,12 +219,14 @@ void handle_input() {
                 // Arrow key released
                 F0_FLAG = 0;
                 E0_FLAG = 0; 
-                player_h = 0;
+                if (player_aim_h != -1) {
+                    player_aim_h = 0;
+                }
             }
             else if (E0_FLAG) {
                 // Arrow key pressed
                 E0_FLAG = 0;
-                player_h = 1;
+                player_aim_h = 1;
             }
 
             break;
@@ -241,6 +261,10 @@ void update_player() {
 	else if (playerY >= Y_BOUND) // Later: Add height of sprite to playerY 
         playerY = Y_BOUND;
 	
+}
+
+void update_player_bullets() {
+
 }
 
 
@@ -358,17 +382,17 @@ void draw() {
 		}
 	}
 
-    if (player_h != 0) {
+    if (player_aim_h != 0) {
         for (int i = 0; i < 10; i++) {
 			for (int j = 0; j < 10; j++) {
-				plot_pixel(playerX + player_h * 30 + i, playerY + j, 0x1c00);	
+				plot_pixel(playerX + player_aim_h * 30 + i, playerY + j, 0x1c00);	
 			}
 		}
     }
-    else if (player_v != 0) {
+    else if (player_aim_v != 0) {
         for (int i = 0; i < 10; i++) {
 			for (int j = 0; j < 10; j++) {
-				plot_pixel(playerX + i, playerY + player_v * 30 + j, 0x1c00);	
+				plot_pixel(playerX + i, playerY + player_aim_v * 30 + j, 0x1c00);	
 			}
 		}
     }
