@@ -4,10 +4,12 @@
 
 #define PLAYER_VELO 5			// player velocity constant
 #define BULLET_VELO 20
+#define PLAYER_BULLET_VELO 20
 #define X_BOUND 319				// screen x bound
 #define Y_BOUND 239				// screen y bound
 #define NUM_BULLETS 100
 #define FIRE_RATE 10			// How many frames between an enemy shooting a bullet, lower = faster firing
+#define PLAYER_FIRE_RATE 10
 
 void clear_screen();
 void plot_pixel(int, int, short int);
@@ -20,6 +22,8 @@ void update_bullet();
 void init_bullets();
 void reset_bullet(int i);
 void update_player_bullets();
+double squareRoot(double n, float l);
+void player_reset_bullet(int i);
 
 int pixel_buffer_start; // global variable
 int back_buffer;
@@ -31,7 +35,9 @@ int E0_FLAG;			// Flag for when E0 bit is received
 int F0_FLAG;			// Flag for when F0 bit is received
 int numBulletsActive;	
 int curBullet;			// Current bullet in bullet array
-int frameCounter;		// frame counter for bullet firing delay 
+int player_curBullet;
+int frameCounter_enemy;		// frame counter for bullet firing delay 
+int frameCounter_player;
 int player_aim_h;       // Indicates whether the player is aiming horizontally/vertically using arrow keys 
 int player_aim_v;       // player will shoot a bullet only when one of these is non-zero
 
@@ -59,7 +65,10 @@ int main(void)
 	init_bullets();
 	numBulletsActive = 0;
 	curBullet = 0;
-	frameCounter = 0;
+	player_curBullet = 0;
+    frameCounter_enemy = 0;
+    frameCounter_player = 0;
+    
 
     player_aim_h = player_aim_v = 0;
 	
@@ -82,6 +91,7 @@ int main(void)
 void init_bullets() {
 	for (int i = 0; i < NUM_BULLETS; i++) {
 		reset_bullet(i);
+        player_reset_bullet(i);
 	}
 }
 
@@ -91,6 +101,14 @@ void reset_bullet(int i) {
 	enemyBullets[i].velo_x = 0;
 	enemyBullets[i].velo_y = 0;
 	enemyBullets[i].isActive = 0;
+}
+
+void player_reset_bullet(int i) {
+    playerBullets[i].x = 0;
+    playerBullets[i].y = 0;
+    playerBullets[i].velo_x = 0;
+    playerBullets[i].velo_y = 0;
+    playerBullets[i].isActive = 0;
 }
 
 void handle_input() {
@@ -264,42 +282,60 @@ void update_player() {
 }
 
 void update_player_bullets() {
+    if (frameCounter_player == PLAYER_FIRE_RATE) {
+        // Fire bullet in aiming direction
+        if (player_aim_h != 0) {
+            float deltaX = (playerX + 5 * player_aim_h) - playerX;      // deltaX is between some point (5 pixels) in the aiming direction and the player
+            float deltaY = 0;
+            float hyp = squareRoot( pow(deltaX, 2) + pow(deltaY, 2), 0.0001);
+            playerBullets[player_curBullet].x = playerX;
+            playerBullets[player_curBullet].y = playerY;
+            playerBullets[player_curBullet].velo_x = BULLET_VELO * (deltaX / hyp);
+            playerBullets[player_curBullet].velo_y = BULLET_VELO * (deltaY / hyp);
+            playerBullets[player_curBullet].isActive = 1;
+        
+            player_curBullet = player_curBullet + 1;
 
-}
+           if (player_curBullet >= NUM_BULLETS) player_curBullet = 0;
+        }
+        else if (player_aim_v != 0) {
+            float deltaX = 0;
+            float deltaY = (playerY + 5 * player_aim_v) - playerY;
+            float hyp = squareRoot( pow(deltaX, 2) + pow(deltaY, 2), 0.0001);
+            playerBullets[player_curBullet].x = playerX;                // create bullet at player location to fire
+            playerBullets[player_curBullet].y = playerY;
+            playerBullets[player_curBullet].velo_x = BULLET_VELO * (deltaX / hyp);
+            playerBullets[player_curBullet].velo_y = BULLET_VELO * (deltaY / hyp);
+            playerBullets[player_curBullet].isActive = 1;
 
+            player_curBullet = player_curBullet + 1;
 
-double squareRoot(double n, float l)
-{
-    // Assuming the sqrt of n as n only
-    double x = n;
- 
-    // The closed guess will be stored in the root
-    double root;
- 
-    // To count the number of iterations
-    int count = 0;
- 
-    while (1) {
-        count++;
- 
-        // Calculate more closed x
-        root = 0.5 * (x + (n / x));
- 
-        // Check for closeness
-        if (abs(root - x) < l)
-            break;
- 
-        // Update root
-        x = root;
+            if (player_curBullet >= NUM_BULLETS) player_curBullet = 0;
+        }
+        
+        frameCounter_player = 0;
     }
- 
-    return root;
-}
+    else {
+        frameCounter_player = frameCounter_player + 1;
+    }
 
+    for (int i = 0; i < NUM_BULLETS; i++) {
+		if (playerBullets[i].isActive) {
+			// update movement
+			// check if offscreen
+			playerBullets[i].x = playerBullets[i].x + playerBullets[i].velo_x;
+			playerBullets[i].y = playerBullets[i].y + playerBullets[i].velo_y;
+			
+			if (playerBullets[i].x >= X_BOUND || playerBullets[i].x <= 0 || playerBullets[i].y >= Y_BOUND || playerBullets[i].y <= 0) {
+				player_reset_bullet(i);
+			}
+		}
+	}
+}
 
 
 void update_bullet() {
-	if (frameCounter == FIRE_RATE) {
+	if (frameCounter_enemy == FIRE_RATE) {
 		// fire bullet - ie. get velocity, set isActive = 1;
 		float deltaX = playerX - enemyBullets[curBullet].x;
 		float deltaY = playerY - enemyBullets[curBullet].y;
@@ -312,10 +348,10 @@ void update_bullet() {
 
 		if (curBullet >= NUM_BULLETS) curBullet = 0;
 		
-		frameCounter = 0;
+		frameCounter_enemy = 0;
 	}
 	else {
-		frameCounter = frameCounter + 1;	
+		frameCounter_enemy = frameCounter_enemy + 1;	
 	}
     // later: will need to use a for loop for each 
     // change enemyBullets.x in deltas to enemy locations
@@ -355,6 +391,7 @@ void update() {
 	update_player();
 	
 	update_bullet();
+    update_player_bullets();
 	
 	
 }
@@ -377,6 +414,16 @@ void draw() {
 			for (int j = 0; j < 10; j++) {
 				if (enemyBullets[k].isActive) {
                     plot_pixel(enemyBullets[k].x + i, enemyBullets[k].y + j, 0xfff1);	
+                }
+			}
+		}
+	}
+
+    for (int k = 0; k < NUM_BULLETS; k++) {
+		for (int i = 0; i < 10; i++) {
+			for (int j = 0; j < 10; j++) {
+				if (playerBullets[k].isActive) {
+                    plot_pixel(playerBullets[k].x + i, playerBullets[k].y + j, 0x0011);	
                 }
 			}
 		}
@@ -426,4 +473,32 @@ void clear_screen() {
 			plot_pixel(x, y, 0);	
 		}
 	}
+}
+
+double squareRoot(double n, float l)
+{
+    // Assuming the sqrt of n as n only
+    double x = n;
+ 
+    // The closed guess will be stored in the root
+    double root;
+ 
+    // To count the number of iterations
+    int count = 0;
+ 
+    while (1) {
+        count++;
+ 
+        // Calculate more closed x
+        root = 0.5 * (x + (n / x));
+ 
+        // Check for closeness
+        if (abs(root - x) < l)
+            break;
+ 
+        // Update root
+        x = root;
+    }
+ 
+    return root;
 }
