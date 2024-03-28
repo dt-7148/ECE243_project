@@ -6,7 +6,7 @@
 
 
 #define PLAYER_VELO 5           // player velocity constant
-#define BULLET_VELO 20
+#define BULLET_VELO 10
 #define PLAYER_BULLET_VELO 20
 #define X_BOUND 319             // screen x bound
 #define Y_BOUND 239             // screen y bound
@@ -15,9 +15,9 @@
 #define PLAYER_FIRE_RATE 10
 #define NUM_ENEMIES 5          // How many enemies to spawn in a given room
 
-#define PLAYER_WIDTH 5
+#define PLAYER_WIDTH 8
 #define PLAYER_BULLET_WIDTH 3
-#define ENEMY_WIDTH 5
+#define ENEMY_WIDTH 8
 #define ENEMY_BULLET_WIDTH 3
 
 
@@ -55,7 +55,7 @@ int frameCounter_player;
 int player_aim_h;       // Indicates whether the player is aiming horizontally/vertically using arrow keys
 int player_aim_v;       // player will shoot a bullet only when one of these is non-zero
 
-
+int isPlayerHit;
 
 
 typedef struct entity {
@@ -100,9 +100,7 @@ int main(void)
     player_curBullet = 0;
     frameCounter_enemy = 0;
     frameCounter_player = 0;
-   
-
-
+	isPlayerHit = 0;
 
 
     player_aim_h = player_aim_v = 0;
@@ -275,6 +273,7 @@ void handle_input() {
                 // Arrow key pressed
                 E0_FLAG = 0;
                 player_aim_v = -1;
+				isPlayerHit = 0; 				// ********************************************************** Remove this line later, this is just for testing collisions **********************************************************
             }
 
 
@@ -370,13 +369,13 @@ void update_player() {
    
     if (playerX <= 0)
         playerX = 0;
-    else if (playerX >= X_BOUND) // Later: Add width of sprite to playerX
-        playerX = X_BOUND;
+    else if (playerX + (2 * PLAYER_WIDTH - 1) >= X_BOUND) // Later: Add width of sprite to playerX
+        playerX = X_BOUND - (2 * PLAYER_WIDTH - 1);
            
     if (playerY <= 0)
         playerY = 0;
-    else if (playerY >= Y_BOUND) // Later: Add height of sprite to playerY
-        playerY = Y_BOUND;
+    else if (playerY + (2 * PLAYER_WIDTH - 1) >= Y_BOUND) // Later: Add height of sprite to playerY
+        playerY = Y_BOUND - (2 * PLAYER_WIDTH - 1);
    
 }
 
@@ -457,8 +456,8 @@ void update_bullet() {
             // fire bullet - ie. get velocity, set isActive = 1;
             enemyBullets[curBullet].x = enemies[i].x;
             enemyBullets[curBullet].y = enemies[i].y;
-            float deltaX = playerX - enemies[i].x;
-            float deltaY = playerY - enemies[i].y;
+            float deltaX = playerX + (PLAYER_WIDTH - 1) - enemies[i].x;			// Aiming at the centre of the player, hence playerWidth - 1 added
+            float deltaY = playerY + (PLAYER_WIDTH - 1) - enemies[i].y;					
             float hyp = squareRoot( pow(deltaX, 2) + pow(deltaY, 2), 0.0001);
             enemyBullets[curBullet].velo_x = BULLET_VELO * (deltaX / hyp);
             enemyBullets[curBullet].velo_y = BULLET_VELO * (deltaY / hyp);
@@ -484,9 +483,19 @@ void update_bullet() {
             enemyBullets[i].x = enemyBullets[i].x + enemyBullets[i].velo_x;
             enemyBullets[i].y = enemyBullets[i].y + enemyBullets[i].velo_y;
            
+			// bullet went offscreen
             if (enemyBullets[i].x >= X_BOUND || enemyBullets[i].x <= 0 || enemyBullets[i].y >= Y_BOUND || enemyBullets[i].y <= 0) {
                 reset_bullet(i);
             }
+			
+			// Collision detection
+			if (enemyBullets[i].x >= playerX && enemyBullets[i].x < playerX + (2 * PLAYER_WIDTH)) {
+				if (enemyBullets[i].y >= playerY && enemyBullets[i].y < playerY + (2 * PLAYER_WIDTH)) {
+					// Collision detected
+					isPlayerHit = 1;
+				}
+			}
+			
         }
     }
 }
@@ -529,14 +538,19 @@ void draw() {
         depending on state, menu or game, draw something different
     */
    
-    for (int i = -PLAYER_WIDTH; i < PLAYER_WIDTH; i++) {
-        for (int j = -PLAYER_WIDTH; j < PLAYER_WIDTH; j++) {
-            plot_pixel(playerX + i, playerY + j, 0xffff);  
+    for (int i = 0; i < 2 * PLAYER_WIDTH; i++) {
+        for (int j = 0; j < 2 * PLAYER_WIDTH; j++) {
+           if (isPlayerHit) {
+			    plot_pixel(playerX + i, playerY + j, 0x0ff0);  
+		   }
+		   else {
+				 plot_pixel(playerX + i, playerY + j, 0xffff);  
+		   }
         }
     }
    
-    for (int i = -ENEMY_WIDTH; i < ENEMY_WIDTH; i++) {
-        for (int j = -ENEMY_WIDTH; j < ENEMY_WIDTH; j++) {
+    for (int i = 0; i < 2 * ENEMY_WIDTH; i++) {
+        for (int j = 0; j < 2 * ENEMY_WIDTH; j++) {
             for (int k = 0; k < NUM_ENEMIES; k++) {
                 plot_pixel(enemies[k].x + i, enemies[k].y + j, 0x07e0);
             }  
@@ -544,8 +558,8 @@ void draw() {
     }
    
     for (int k = 0; k < NUM_BULLETS; k++) {
-        for (int i = -ENEMY_BULLET_WIDTH; i < ENEMY_BULLET_WIDTH; i++) {
-            for (int j = -ENEMY_BULLET_WIDTH; j < ENEMY_BULLET_WIDTH; j++) {
+        for (int i = 0; i < 2 * ENEMY_BULLET_WIDTH; i++) {
+            for (int j = 0; j < 2 * ENEMY_BULLET_WIDTH; j++) {
                 if (enemyBullets[k].isActive) {
                     plot_pixel(enemyBullets[k].x + i, enemyBullets[k].y + j, 0xfff1);  
                 }
@@ -557,8 +571,8 @@ void draw() {
 
 
     for (int k = 0; k < NUM_BULLETS; k++) {
-        for (int i = -PLAYER_BULLET_WIDTH; i < PLAYER_BULLET_WIDTH; i++) {
-            for (int j = -PLAYER_BULLET_WIDTH; j < PLAYER_BULLET_WIDTH; j++) {
+        for (int i = 0; i < 2 * PLAYER_BULLET_WIDTH; i++) {
+            for (int j = 0; j < 2 * PLAYER_BULLET_WIDTH; j++) {
                 if (playerBullets[k].isActive) {
                     plot_pixel(playerBullets[k].x + i, playerBullets[k].y + j, 0x0011);
                 }
