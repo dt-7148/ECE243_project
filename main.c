@@ -389,8 +389,8 @@ void update_player_bullets() {
             float deltaX = (playerX + 5 * player_aim_h) - playerX;      // deltaX is between some point (5 pixels) in the aiming direction and the player
             float deltaY = 0;
             float hyp = squareRoot( pow(deltaX, 2) + pow(deltaY, 2), 0.0001);
-            playerBullets[player_curBullet].x = playerX;
-            playerBullets[player_curBullet].y = playerY;
+            playerBullets[player_curBullet].x = playerX + PLAYER_WIDTH;
+            playerBullets[player_curBullet].y = playerY + PLAYER_WIDTH;
             playerBullets[player_curBullet].velo_x = BULLET_VELO * (deltaX / hyp);
             playerBullets[player_curBullet].velo_y = BULLET_VELO * (deltaY / hyp);
             playerBullets[player_curBullet].isActive = 1;
@@ -406,8 +406,8 @@ void update_player_bullets() {
             float deltaX = 0;
             float deltaY = (playerY + 5 * player_aim_v) - playerY;
             float hyp = squareRoot( pow(deltaX, 2) + pow(deltaY, 2), 0.0001);
-            playerBullets[player_curBullet].x = playerX;                // create bullet at player location to fire
-            playerBullets[player_curBullet].y = playerY;
+            playerBullets[player_curBullet].x = playerX + PLAYER_WIDTH;                // create bullet at player location to fire
+            playerBullets[player_curBullet].y = playerY + PLAYER_WIDTH;
             playerBullets[player_curBullet].velo_x = BULLET_VELO * (deltaX / hyp);
             playerBullets[player_curBullet].velo_y = BULLET_VELO * (deltaY / hyp);
             playerBullets[player_curBullet].isActive = 1;
@@ -589,7 +589,7 @@ void draw() {
         for (int i = 0; i < 2 * PLAYER_BULLET_WIDTH; i++) {
             for (int j = 0; j < 2 * PLAYER_BULLET_WIDTH; j++) {
                 if (playerBullets[k].isActive) {
-                    plot_pixel(playerBullets[k].x + i, playerBullets[k].y + j, 0x0011);
+                    plot_pixel(playerBullets[k].x + i, playerBullets[k].y + j, 0x00ff);
                 }
             }
         }
@@ -597,21 +597,6 @@ void draw() {
 
 
 
-
-    if (player_aim_h != 0) {
-        for (int i = -5; i < 5; i++) {
-            for (int j = -5; j < 5; j++) {
-                plot_pixel(playerX + player_aim_h * 30 + i, playerY + j, 0x1c00);  
-            }
-        }
-    }
-    else if (player_aim_v != 0) {
-        for (int i = -5; i < 5; i++) {
-            for (int j = -5; j < 5; j++) {
-                plot_pixel(playerX + i, playerY + player_aim_v * 30 + j, 0x1c00);  
-            }
-        }
-    }
 }
 
 
@@ -695,11 +680,3 @@ double squareRoot(double n, float l)
  
     return root;
 }
-
-
-
-
-
-
-
-
