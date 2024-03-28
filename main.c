@@ -139,11 +139,11 @@ void init_bullets() {
 
 void init_enemies() {
     for (int i = 0; i < NUM_ENEMIES; i++) {
-        enemies[i].x = (rand() % (X_BOUND + 1));           // Initialize positions to be a random point between the screen bounds
-        enemies[i].y = (rand() % (Y_BOUND + 1));           // Later: factor in width of enemy
+        enemies[i].x = (rand() % (X_BOUND + 1 - (2 * ENEMY_WIDTH)));           // Initialize positions to be a random point between the screen bounds
+        enemies[i].y = (rand() % (Y_BOUND + 1 - (2 * ENEMY_WIDTH)));           // Later: factor in width of enemy
         enemies[i].velo_x = 0;
         enemies[i].velo_y = 0;
-        enemies[i].isActive = 0;
+        enemies[i].isActive = 1;
     }
 }
 
@@ -442,6 +442,17 @@ void update_player_bullets() {
             if (playerBullets[i].x >= X_BOUND || playerBullets[i].x <= 0 || playerBullets[i].y >= Y_BOUND || playerBullets[i].y <= 0) {
                 player_reset_bullet(i);
             }
+			
+			for (int j = 0; j < NUM_ENEMIES; j++) {
+				// Detect if player bullet hit enemy
+				
+				if (playerBullets[i].x + (2 * PLAYER_BULLET_WIDTH) >= enemies[j].x && playerBullets[i].x < enemies[j].x + (2 * ENEMY_WIDTH)) {
+					if (playerBullets[i].y + (2 * PLAYER_BULLET_WIDTH) >= enemies[j].y && playerBullets[i].y < enemies[j].y + (2 * ENEMY_WIDTH)) {
+						enemies[j].isActive = 0;
+						playerBullets[i].isActive = 0;
+					}
+				}
+			}
         }
     }
 }
@@ -453,19 +464,21 @@ void update_player_bullets() {
 void update_bullet() {
     if (frameCounter_enemy == FIRE_RATE) {
         for (int i = 0; i < NUM_ENEMIES; i++) {
-            // fire bullet - ie. get velocity, set isActive = 1;
-            enemyBullets[curBullet].x = enemies[i].x;
-            enemyBullets[curBullet].y = enemies[i].y;
-            float deltaX = playerX + (PLAYER_WIDTH - 1) - enemies[i].x;			// Aiming at the centre of the player, hence playerWidth - 1 added
-            float deltaY = playerY + (PLAYER_WIDTH - 1) - enemies[i].y;					
-            float hyp = squareRoot( pow(deltaX, 2) + pow(deltaY, 2), 0.0001);
-            enemyBullets[curBullet].velo_x = BULLET_VELO * (deltaX / hyp);
-            enemyBullets[curBullet].velo_y = BULLET_VELO * (deltaY / hyp);
-            enemyBullets[curBullet].isActive = 1;
-            curBullet = curBullet + 1;
+            if (enemies[i].isActive) {
+				// fire bullet - ie. get velocity, set isActive = 1;
+				enemyBullets[curBullet].x = enemies[i].x;
+				enemyBullets[curBullet].y = enemies[i].y;
+				float deltaX = playerX + (PLAYER_WIDTH - 1) - enemies[i].x;			// Aiming at the centre of the player, hence playerWidth - 1 added
+				float deltaY = playerY + (PLAYER_WIDTH - 1) - enemies[i].y;					
+				float hyp = squareRoot( pow(deltaX, 2) + pow(deltaY, 2), 0.0001);
+				enemyBullets[curBullet].velo_x = BULLET_VELO * (deltaX / hyp);
+				enemyBullets[curBullet].velo_y = BULLET_VELO * (deltaY / hyp);
+				enemyBullets[curBullet].isActive = 1;
+				curBullet = curBullet + 1;
 
 
-            if (curBullet >= NUM_BULLETS) curBullet = 0;
+				if (curBullet >= NUM_BULLETS) curBullet = 0;
+			}
         }
        
         frameCounter_enemy = 0;
@@ -552,7 +565,9 @@ void draw() {
     for (int i = 0; i < 2 * ENEMY_WIDTH; i++) {
         for (int j = 0; j < 2 * ENEMY_WIDTH; j++) {
             for (int k = 0; k < NUM_ENEMIES; k++) {
-                plot_pixel(enemies[k].x + i, enemies[k].y + j, 0x07e0);
+                if (enemies[k].isActive) {
+					plot_pixel(enemies[k].x + i, enemies[k].y + j, 0x07e0);
+				}
             }  
         }
     }
