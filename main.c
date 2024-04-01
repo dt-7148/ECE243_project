@@ -446,10 +446,12 @@ void update_player_bullets() {
 			for (int j = 0; j < NUM_ENEMIES; j++) {
 				// Detect if player bullet hit enemy
 				
-				if (playerBullets[i].x + (2 * PLAYER_BULLET_WIDTH) >= enemies[j].x && playerBullets[i].x < enemies[j].x + (2 * ENEMY_WIDTH)) {
-					if (playerBullets[i].y + (2 * PLAYER_BULLET_WIDTH) >= enemies[j].y && playerBullets[i].y < enemies[j].y + (2 * ENEMY_WIDTH)) {
-						enemies[j].isActive = 0;
-						playerBullets[i].isActive = 0;
+				if (enemies[j].isActive) {
+					if (playerBullets[i].x + (2 * PLAYER_BULLET_WIDTH) >= enemies[j].x && playerBullets[i].x < enemies[j].x + (2 * ENEMY_WIDTH)) {
+						if (playerBullets[i].y + (2 * PLAYER_BULLET_WIDTH) >= enemies[j].y && playerBullets[i].y < enemies[j].y + (2 * ENEMY_WIDTH)) {
+							enemies[j].isActive = 0;
+							playerBullets[i].isActive = 0;
+						}
 					}
 				}
 			}
