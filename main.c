@@ -19,6 +19,7 @@
 #define PLAYER_BULLET_WIDTH 3
 #define ENEMY_WIDTH 8
 #define ENEMY_BULLET_WIDTH 3
+#define WALL_WIDTH 8
 
 
 
@@ -93,7 +94,7 @@ int main(void)
 
 
 
-    playerX = playerY = 0;
+    playerX = playerY = 2 * WALL_WIDTH + 1; // Start in top left corner for now
     init_bullets();
     init_enemies();
     curBullet = 0;
@@ -139,8 +140,8 @@ void init_bullets() {
 
 void init_enemies() {
     for (int i = 0; i < NUM_ENEMIES; i++) {
-        enemies[i].x = (rand() % (X_BOUND + 1 - (2 * ENEMY_WIDTH)));           // Initialize positions to be a random point between the screen bounds
-        enemies[i].y = (rand() % (Y_BOUND + 1 - (2 * ENEMY_WIDTH)));           // Later: factor in width of enemy
+        enemies[i].x = (rand() % (X_BOUND - (2 * ENEMY_WIDTH) - (2 * WALL_WIDTH))) + (2 * WALL_WIDTH);           // Initialize positions to be a random point between the screen bounds
+        enemies[i].y = (rand() % (Y_BOUND - (2 * ENEMY_WIDTH) - (2 * WALL_WIDTH))) + (2 * WALL_WIDTH);           // Later: factor in width of enemy
         enemies[i].velo_x = 0;
         enemies[i].velo_y = 0;
         enemies[i].isActive = 1;
@@ -367,15 +368,15 @@ void update_player() {
     playerX += player_velo_x;
     playerY += player_velo_y;
    
-    if (playerX <= 0)
-        playerX = 0;
-    else if (playerX + (2 * PLAYER_WIDTH - 1) >= X_BOUND) // Later: Add width of sprite to playerX
-        playerX = X_BOUND - (2 * PLAYER_WIDTH - 1);
+    if (playerX <= (2 * WALL_WIDTH))
+        playerX = (2 * WALL_WIDTH);
+    else if (playerX + (2 * PLAYER_WIDTH - 1) >= X_BOUND - (2 * WALL_WIDTH)) // Later: Add width of sprite to playerX
+        playerX = X_BOUND - (2 * WALL_WIDTH) - (2 * PLAYER_WIDTH - 1);
            
-    if (playerY <= 0)
-        playerY = 0;
-    else if (playerY + (2 * PLAYER_WIDTH - 1) >= Y_BOUND) // Later: Add height of sprite to playerY
-        playerY = Y_BOUND - (2 * PLAYER_WIDTH - 1);
+    if (playerY <= (2 * WALL_WIDTH))
+        playerY = (2 * WALL_WIDTH);
+    else if (playerY + (2 * PLAYER_WIDTH - 1) >= Y_BOUND - (2 * WALL_WIDTH)) // Later: Add height of sprite to playerY
+        playerY = Y_BOUND -(2 * WALL_WIDTH) - (2 * PLAYER_WIDTH - 1);
    
 }
 
@@ -591,11 +592,39 @@ void draw() {
         for (int i = 0; i < 2 * PLAYER_BULLET_WIDTH; i++) {
             for (int j = 0; j < 2 * PLAYER_BULLET_WIDTH; j++) {
                 if (playerBullets[k].isActive) {
-                    plot_pixel(playerBullets[k].x + i, playerBullets[k].y + j, 0x00ff);
+                    plot_pixel(playerBullets[k].x + i, playerBullets[k].y + j, 0x11ff);
                 }
             }
         }
     }
+	
+	// Drawing walls - really poorly done right now ==============================================================================================================================
+	
+	for (int i = 0; i < 2 * WALL_WIDTH; i++) {
+		for (int j = 0; j < Y_BOUND; j++) {
+			plot_pixel(i, j, 0xffff);
+		}
+	}
+	
+	for (int i = X_BOUND - 2*WALL_WIDTH; i < X_BOUND; i++) {
+		for (int j = 0; j < Y_BOUND; j++) {
+			plot_pixel(i, j, 0xffff);
+		}
+	}
+	
+	for (int i = 2 * WALL_WIDTH; i < X_BOUND - 2 * WALL_WIDTH; i++) {
+		for (int j = 0; j < 2 * WALL_WIDTH; j++) {
+			plot_pixel(i, j, 0xffff);
+		}
+	}
+	
+	for (int i = 2 * WALL_WIDTH; i < X_BOUND - 2 * WALL_WIDTH; i++) {
+		for (int j = Y_BOUND - 2 * WALL_WIDTH; j < Y_BOUND; j++) {
+			plot_pixel(i, j, 0xffff);
+		}
+	}
+	
+	// ===========================================================================================================================================================================
 
 
 
