@@ -20,6 +20,7 @@
 #define ENEMY_WIDTH 8
 #define ENEMY_BULLET_WIDTH 3
 #define WALL_WIDTH 8
+#define DOOR_WIDTH 8
 
 
 
@@ -356,15 +357,87 @@ void update_player() {
     playerX += player_velo_x;
     playerY += player_velo_y;
    
-    if (playerX <= (2 * WALL_WIDTH))
-        playerX = (2 * WALL_WIDTH);
-    else if (playerX + (2 * PLAYER_WIDTH - 1) >= X_BOUND - (2 * WALL_WIDTH)) // Later: Add width of sprite to playerX
-        playerX = X_BOUND - (2 * WALL_WIDTH) - (2 * PLAYER_WIDTH - 1);
-           
-    if (playerY <= (2 * WALL_WIDTH))
-        playerY = (2 * WALL_WIDTH);
-    else if (playerY + (2 * PLAYER_WIDTH - 1) >= Y_BOUND - (2 * WALL_WIDTH)) // Later: Add height of sprite to playerY
-        playerY = Y_BOUND -(2 * WALL_WIDTH) - (2 * PLAYER_WIDTH - 1);
+    if (playerX <= (2 * WALL_WIDTH)) {
+        if (numActiveEnemies != 0) {
+			playerX = (2 * WALL_WIDTH);
+		}
+		else {
+			if (playerY >= ((Y_BOUND + 1)/ 2) - 2 * DOOR_WIDTH && playerY <= ((Y_BOUND + 1)/ 2) + 2 * DOOR_WIDTH) {
+				double tempPlayerY = playerY;
+				
+				// reinitialize the room
+				init_globals();
+				
+				// Relocate player to other side of room
+				playerX = X_BOUND - (2 * WALL_WIDTH) - (2 * PLAYER_WIDTH);
+				playerY = tempPlayerY;
+			}
+			else {
+				playerX = (2 * WALL_WIDTH);
+			}
+		}
+	}
+    else if (playerX + (2 * PLAYER_WIDTH - 1) >= X_BOUND - (2 * WALL_WIDTH)) {
+        if (numActiveEnemies != 0) {
+			playerX = X_BOUND - (2 * WALL_WIDTH) - (2 * PLAYER_WIDTH - 1);
+		}
+		else {
+			if (playerY >= ((Y_BOUND + 1)/ 2) - 2 * DOOR_WIDTH && playerY <= ((Y_BOUND + 1)/ 2) + 2 * DOOR_WIDTH) {
+				double tempPlayerY = playerY;
+				
+				// reinitialize the room
+				init_globals();
+				
+				// Relocate player to other side of room
+				playerX = (2 * PLAYER_WIDTH);
+				playerY = tempPlayerY;
+			}
+			else {
+				playerX = X_BOUND - (2 * WALL_WIDTH) - (2 * PLAYER_WIDTH - 1);
+			}
+		}
+	}
+    
+	if (playerY <= (2 * WALL_WIDTH)) {
+        if (numActiveEnemies != 0) {
+			playerY = (2 * WALL_WIDTH);
+		}
+		else {
+			if (playerX >= ((X_BOUND + 1) / 2) - 2 * DOOR_WIDTH && playerX <= ((X_BOUND + 1) / 2) + 2 * DOOR_WIDTH) {
+				double tempPlayerX = playerX;
+				
+				// reinitialize the room
+				init_globals();
+				
+				// Relocate player to other side of room
+				playerY = Y_BOUND - (2 * WALL_WIDTH) - (2 * PLAYER_WIDTH);
+				playerX = tempPlayerX;
+			}
+			else {
+				playerY = (2 * WALL_WIDTH);
+			}
+		}
+	}
+    else if (playerY + (2 * PLAYER_WIDTH - 1) >= Y_BOUND - (2 * WALL_WIDTH)) {
+        if (numActiveEnemies != 0) {
+			playerY = Y_BOUND -(2 * WALL_WIDTH) - (2 * PLAYER_WIDTH - 1);
+		}
+		else {
+			if (playerX >= ((X_BOUND + 1) / 2) - 2 * DOOR_WIDTH && playerX <= ((X_BOUND + 1) / 2) + 2 * DOOR_WIDTH) {
+				double tempPlayerX = playerX;
+				
+				// reinitialize the room
+				init_globals();
+				
+				// Relocate player to other side of room
+				playerY = (2 * PLAYER_WIDTH);
+				playerX = tempPlayerX;
+			}
+			else {
+				playerY = Y_BOUND -(2 * WALL_WIDTH) - (2 * PLAYER_WIDTH - 1);
+			}
+		}
+	}
    
 }
 
@@ -594,48 +667,65 @@ void draw() {
 	
 	for (int i = 0; i < 2 * WALL_WIDTH; i++) {
 		for (int j = 0; j < Y_BOUND; j++) {
-			if (numActiveEnemies != 0) {
-				plot_pixel(i, j, 0xffff);
-			}
-			else {
-				plot_pixel(i, j, 0x0ff0);
-			}
+			plot_pixel(i, j, 0xffff);
 		}
 	}
 	
 	for (int i = X_BOUND - 2*WALL_WIDTH; i < X_BOUND; i++) {
 		for (int j = 0; j < Y_BOUND; j++) {
-			if (numActiveEnemies != 0) {
-				plot_pixel(i, j, 0xffff);
-			}
-			else {
-				plot_pixel(i, j, 0x0ff0);
-			}
+			plot_pixel(i, j, 0xffff);
 		}
 	}
 	
 	for (int i = 2 * WALL_WIDTH; i < X_BOUND - 2 * WALL_WIDTH; i++) {
 		for (int j = 0; j < 2 * WALL_WIDTH; j++) {
-			if (numActiveEnemies != 0) {
-				plot_pixel(i, j, 0xffff);
-			}
-			else {
-				plot_pixel(i, j, 0x0ff0);
-			}
+			plot_pixel(i, j, 0xffff);
 		}
 	}
 	
 	for (int i = 2 * WALL_WIDTH; i < X_BOUND - 2 * WALL_WIDTH; i++) {
 		for (int j = Y_BOUND - 2 * WALL_WIDTH; j < Y_BOUND; j++) {
-			if (numActiveEnemies != 0) {
-				plot_pixel(i, j, 0xffff);
-			}
-			else {
+			plot_pixel(i, j, 0xffff);
+		}
+	}
+	
+	// Drawing Doors =============================================================================================================================================================
+	
+	// Top doors
+	for (int i = (X_BOUND + 1)/2 - 2 * DOOR_WIDTH; i < ((X_BOUND + 1) / 2) + 2 * DOOR_WIDTH; i++) {
+		for (int j = 0; j < 2 * DOOR_WIDTH; j++) {
+			if (numActiveEnemies == 0) {
 				plot_pixel(i, j, 0x0ff0);
 			}
 		}
 	}
 	
+	// Bottom doors
+	for (int i = ((X_BOUND + 1)/2) - 2 * DOOR_WIDTH; i < ((X_BOUND + 1) / 2) + 2 * DOOR_WIDTH; i++) {
+		for (int j = Y_BOUND - 2 * DOOR_WIDTH; j < Y_BOUND; j++) {
+			if (numActiveEnemies == 0) {
+				plot_pixel(i, j, 0x0ff0);
+			}
+		}
+	}
+	
+	// Left doors
+	for (int i = 0; i < 2 * DOOR_WIDTH; i++) {
+		for (int j = ((Y_BOUND + 1) / 2) - 2 * DOOR_WIDTH; j < ((Y_BOUND + 1) / 2) + 2 * DOOR_WIDTH; j++) {
+			if (numActiveEnemies == 0) {
+				plot_pixel(i, j, 0x0ff0);
+			}
+		}
+	}
+	
+	// Right doors
+	for (int i = X_BOUND - 2 * DOOR_WIDTH; i < X_BOUND; i++) {
+		for (int j = ((Y_BOUND + 1) / 2) - 2 * DOOR_WIDTH; j < ((Y_BOUND + 1) / 2) + 2 * DOOR_WIDTH; j++) {
+			if (numActiveEnemies == 0) {
+				plot_pixel(i, j, 0x0ff0);
+			}
+		}
+	}
 	
 	
 	// ===========================================================================================================================================================================
