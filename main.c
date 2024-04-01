@@ -128,10 +128,12 @@ void init_bullets() {
 
 
 void init_enemies() {
-    for (int i = 0; i < NUM_ENEMIES; i++) {
-        enemies[i].x = (rand() % (X_BOUND - (2 * ENEMY_WIDTH) - (2 * WALL_WIDTH))) + (2 * WALL_WIDTH);           // Initialize positions to be a random point between the screen bounds
-        enemies[i].y = (rand() % (Y_BOUND - (2 * ENEMY_WIDTH) - (2 * WALL_WIDTH))) + (2 * WALL_WIDTH);           // Later: factor in width of enemy
-        enemies[i].velo_x = 0;
+    for (int i = 0; i < NUM_ENEMIES; i++) {       
+		enemies[i].x = rand() % (X_BOUND - (2 * ENEMY_WIDTH) - (2 * WALL_WIDTH));								// Initialize positions to be a random point between the screen bounds
+		enemies[i].x += (2 * WALL_WIDTH);																		// Adding this since you can still get 0 as an x val with just modulo
+        enemies[i].y = rand() % (Y_BOUND - (2 * ENEMY_WIDTH) - (2 * WALL_WIDTH));
+		enemies[i].y += (2 * WALL_WIDTH);
+		enemies[i].velo_x = 0;
         enemies[i].velo_y = 0;
         enemies[i].isActive = 1;
     }
