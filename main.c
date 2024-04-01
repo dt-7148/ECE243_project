@@ -10,7 +10,7 @@
 #define PLAYER_BULLET_VELO 20
 #define X_BOUND 319             // screen x bound
 #define Y_BOUND 239             // screen y bound
-#define NUM_BULLETS 100
+#define NUM_BULLETS 50
 #define FIRE_RATE 10            // How many frames between an enemy shooting a bullet, lower = faster firing
 #define PLAYER_FIRE_RATE 10
 #define NUM_ENEMIES 5          // How many enemies to spawn in a given room
@@ -56,7 +56,9 @@ int frameCounter_player;
 int player_aim_h;       // Indicates whether the player is aiming horizontally/vertically using arrow keys
 int player_aim_v;       // player will shoot a bullet only when one of these is non-zero
 
-int isPlayerHit;
+int isPlayerHit;		// Used for player collision detection with enemy bullets, will be modified later
+						// later: add health and a game over condition
+int numActiveEnemies;
 
 
 typedef struct entity {
@@ -74,27 +76,8 @@ Entity enemyBullets[NUM_BULLETS];
 Entity playerBullets[NUM_BULLETS];
 Entity enemies[NUM_ENEMIES];
 
-
-
-
-
-
-
-
-/*
-    to add later: bullet pool, enemy pool
-*/
-
-
-
-
-int main(void)
-{
-
-
-
-
-    playerX = playerY = 2 * WALL_WIDTH + 1; // Start in top left corner for now
+void init_globals() {
+	playerX = playerY = 2 * WALL_WIDTH + 1; // Start in top left corner for now
     init_bullets();
     init_enemies();
     curBullet = 0;
@@ -102,9 +85,14 @@ int main(void)
     frameCounter_enemy = 0;
     frameCounter_player = 0;
 	isPlayerHit = 0;
-
-
+	numActiveEnemies = NUM_ENEMIES;
+	
     player_aim_h = player_aim_v = 0;
+}
+
+int main(void)
+{
+	init_globals();
    
     volatile int *pixel_ctrl_ptr = (int *)0xFF203020;
     /* Read location of the pixel buffer from the pixel buffer controller */
@@ -450,8 +438,9 @@ void update_player_bullets() {
 				if (enemies[j].isActive) {
 					if (playerBullets[i].x + (2 * PLAYER_BULLET_WIDTH) >= enemies[j].x && playerBullets[i].x < enemies[j].x + (2 * ENEMY_WIDTH)) {
 						if (playerBullets[i].y + (2 * PLAYER_BULLET_WIDTH) >= enemies[j].y && playerBullets[i].y < enemies[j].y + (2 * ENEMY_WIDTH)) {
-							enemies[j].isActive = 0;
-							playerBullets[i].isActive = 0;
+							enemies[j].isActive = 0;			// Deactivate enemy
+							numActiveEnemies--;					// Reduce enemy count
+							playerBullets[i].isActive = 0;		// deactivate bullet, don't make bullet shoot through enemy
 						}
 					}
 				}
@@ -554,6 +543,7 @@ void draw() {
         depending on state, menu or game, draw something different
     */
    
+	// Draw player
     for (int i = 0; i < 2 * PLAYER_WIDTH; i++) {
         for (int j = 0; j < 2 * PLAYER_WIDTH; j++) {
            if (isPlayerHit) {
@@ -565,6 +555,7 @@ void draw() {
         }
     }
    
+	// draw enemies
     for (int i = 0; i < 2 * ENEMY_WIDTH; i++) {
         for (int j = 0; j < 2 * ENEMY_WIDTH; j++) {
             for (int k = 0; k < NUM_ENEMIES; k++) {
@@ -575,6 +566,7 @@ void draw() {
         }
     }
    
+   // Draw enemy bullets
     for (int k = 0; k < NUM_BULLETS; k++) {
         for (int i = 0; i < 2 * ENEMY_BULLET_WIDTH; i++) {
             for (int j = 0; j < 2 * ENEMY_BULLET_WIDTH; j++) {
@@ -587,7 +579,7 @@ void draw() {
 
 
 
-
+	// Draw player bullets
     for (int k = 0; k < NUM_BULLETS; k++) {
         for (int i = 0; i < 2 * PLAYER_BULLET_WIDTH; i++) {
             for (int j = 0; j < 2 * PLAYER_BULLET_WIDTH; j++) {
@@ -602,27 +594,49 @@ void draw() {
 	
 	for (int i = 0; i < 2 * WALL_WIDTH; i++) {
 		for (int j = 0; j < Y_BOUND; j++) {
-			plot_pixel(i, j, 0xffff);
+			if (numActiveEnemies != 0) {
+				plot_pixel(i, j, 0xffff);
+			}
+			else {
+				plot_pixel(i, j, 0x0ff0);
+			}
 		}
 	}
 	
 	for (int i = X_BOUND - 2*WALL_WIDTH; i < X_BOUND; i++) {
 		for (int j = 0; j < Y_BOUND; j++) {
-			plot_pixel(i, j, 0xffff);
+			if (numActiveEnemies != 0) {
+				plot_pixel(i, j, 0xffff);
+			}
+			else {
+				plot_pixel(i, j, 0x0ff0);
+			}
 		}
 	}
 	
 	for (int i = 2 * WALL_WIDTH; i < X_BOUND - 2 * WALL_WIDTH; i++) {
 		for (int j = 0; j < 2 * WALL_WIDTH; j++) {
-			plot_pixel(i, j, 0xffff);
+			if (numActiveEnemies != 0) {
+				plot_pixel(i, j, 0xffff);
+			}
+			else {
+				plot_pixel(i, j, 0x0ff0);
+			}
 		}
 	}
 	
 	for (int i = 2 * WALL_WIDTH; i < X_BOUND - 2 * WALL_WIDTH; i++) {
 		for (int j = Y_BOUND - 2 * WALL_WIDTH; j < Y_BOUND; j++) {
-			plot_pixel(i, j, 0xffff);
+			if (numActiveEnemies != 0) {
+				plot_pixel(i, j, 0xffff);
+			}
+			else {
+				plot_pixel(i, j, 0x0ff0);
+			}
 		}
 	}
+	
+	
 	
 	// ===========================================================================================================================================================================
 
