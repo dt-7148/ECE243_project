@@ -817,3 +817,80 @@ double squareRoot(double n, float l)
  
     return root;
 }
+
+/* ================================================================== Random map gen function demo ======================================================================
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define NUM_ROOMS 10
+
+// Eg. if number of rooms is 10, then make array 21x21
+// middle is (NUM_ROOMS, NUM_ROOMS)
+int map[2 * NUM_ROOMS + 1][2 * NUM_ROOMS + 1];
+
+int main() {
+    int x = NUM_ROOMS; // Start in the middle, expand outwards 
+    int y = NUM_ROOMS;
+    
+    srand(time(NULL));
+    
+    map[x][y] = 1;
+    
+    int validNextDir = 0;
+    
+    for (int i = 0; i < NUM_ROOMS; i++) {
+        // pick a random direction to go - either up/down or left/right - must be adjacent
+        while (!validNextDir) {
+            int dir = rand() % 4; // 0 - 3
+            int nextX = 0;
+            int nextY = 0;
+            
+            switch (dir) 
+            {
+                case 0:                 // north
+                    nextX = x;
+                    nextY = y - 1;
+                    break;
+                case 1:                 // south
+                    nextX = x;
+                    nextY = y + 1;
+                    break;
+                case 2:                 // east
+                    nextX = x + 1;
+                    nextY = y;
+                    break;
+                case 3:                 // west
+                    nextX = x - 1;
+                    nextY = y;
+                    break;
+                default:
+                    break;
+            }
+            
+            if (map[nextX][nextY] == 0) {
+                // room not initialized yet
+                x = nextX;
+                y = nextY;
+                map[x][y] = 1;
+                validNextDir = 1;
+            }
+        }
+        
+        validNextDir = 0;
+    }
+    
+    for (int i = 0; i <= 2 * NUM_ROOMS; i++) {
+        for (int j = 0; j <= 2 * NUM_ROOMS; j++) {
+            if (map[i][j] == 1) {
+                printf("o");
+            }
+            else {
+                printf(" ");
+            }
+        }
+        printf("\n");
+    }
+    
+}
+==========================================================================================================================s*/ 
